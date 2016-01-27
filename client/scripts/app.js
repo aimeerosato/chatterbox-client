@@ -5,23 +5,23 @@ $(document).ready(function() {
   var rooms = {};
   var friends = {};
 
-  app = {  
+  app = { 
+    server : 'https://api.parse.com/1/classes/chatterbox',
     username: 'anon',
     room: 'lobby',
     recievedData: [],
     init: function(){
-        //event binding - submit button, click events, event listeners, run after everything
-      //setInterval( function() { app.fetch() } , 1000);
+      
       app.username = window.location.search.substr(10);  
       app.fetch();
-
+      //setInterval( app.fetch , 3000);
       // Displaying Messages in Rooms
       $('#roomSelect').change(function(){
         $('.messageContainer').empty();
         for(var i = 0; i < app.recievedData.length; i++){
           if(app.recievedData[i].roomname !== undefined ){
             if($('#roomSelect').val() === app.recievedData[i].roomname) {   
-              addMessages(app.recievedData[i]);
+              app.addMessage(app.recievedData[i]);
             }
           }
         }
@@ -30,7 +30,6 @@ $(document).ready(function() {
         e.preventDefault();
         var text = $('#message').val();
         var finalMessage = createMessage(text);
-        //$('.messageContainer').empty();
         app.send(finalMessage);
         app.fetch();
       });
@@ -74,27 +73,41 @@ $(document).ready(function() {
             console.error('chatterbox: Failed to recieve message. Error: ', data);
           }    
         });
+      },
+
+      clearMessages : function(){
+        $('.messageContainer').empty()
+      },
+
+      addRoom : function(rooms){
+        // Append new roons to dropdown only
+        for(var key in rooms){
+          $('#roomSelect').append('<option value= "' + key + '">' + key + '</option>');
+        }
+      },
+
+      addMessage : function(message){
+        user = message.username;
+        text = message.text;  
+        var newDiv = $('<div class="message"></div>');
+        var fullMessage = user + ':\n' + text;
+        newDiv.text(fullMessage);
+        $('.messageContainer').append(newDiv);
       }
   };
 
-  var addRoom = function(rooms){
-    
-    // Append new roons to dropdown only
-    for(var key in rooms){
-      $('#roomSelect').append('<option value= "' + key + '">' + key + '</option>');
-    }
-  };
+  
 
   var dataHandler = function (data){ 
-    //$('#roomSelect').html('<option value= "newRoom"> New Room...</option> <option value="lobby" selected> lobby</option>');
+    $('#roomSelect').html('<option value= "newRoom"> New Room...</option> <option value="lobby" selected> lobby</option>');
     // var rooms = {};
     for(var i = 0; i < data.results.length; i++){
-        addMessages(data.results[i]);
+        app.addMessage(data.results[i]);
     
       // Check for rooms
       // User can add room 
       
-      console.log(data.results[i].roomname);
+      //console.log(data.results[i].roomname);
       if(!rooms[data.results[i].roomname] ){
         //console.log(data.results[i].roomname)
         rooms[data.results[i].roomname] = data.results[i].roomname;
@@ -102,24 +115,13 @@ $(document).ready(function() {
       }
     }
       
-    //   // Check for friends
-    //   if(!friends[data.results[i].username]){
-    //     friends[data.results[i].username] = data.results[i].username;
-    //   }
-    // }
-    console.log(rooms);
-    addRoom(rooms);
+    app.addRoom(rooms);
     
   };
 
-  var addMessages = function(message){
-    user = message.username;
-    text = message.text;  
-    var newDiv = $('<div class="message"></div>');
-    var fullMessage = user + ':\n' + text;
-    newDiv.text(fullMessage);
-    $('.messageContainer').append(newDiv);
-  };
+
+
+  
 
   var createMessage = function(text){
     var message = {};
@@ -129,11 +131,8 @@ $(document).ready(function() {
     return message;
   };
  
-  //createMessage();
   app.init(); 
-  //event handler
-    //clear container
-    //append with messages that only have that room
+  
   
 
   var addFriend = function(){
@@ -143,10 +142,6 @@ $(document).ready(function() {
   var handleSubmit = function() {
 
   };
-  
-
-
-
-
+ 
 });
 
