@@ -1,39 +1,43 @@
-// Setup refresh displayed messaged (automatically or with a button)
-  // Escape user input
-  // Button on-click
 
-// Users select username
-
-// Users send messages
-
-// Users create rooms
-
-  // class for each room
-  // check room property
-    //if no room name, assign general room
-    // append to class it matches
-
-// Users enter and exit rooms
-
-// 'befriend' other uses by click on username
-
-// display messages by friends in bold
-
-// Display messages recieved 
-
+var app;
 $(document).ready(function() {
   
   var rooms = {};
   var friends = {};
 
-
-  var app = {  
+  app = {  
+    username: 'anon',
+    room: 'lobby',
+    recievedData: [],
     init: function(){
         //event binding - submit button, click events, event listeners, run after everything
-      app.fetch(); 
-      roomHandler();
+      //setInterval( function() { app.fetch() } , 1000);
+      app.username = window.location.search.substr(10);  
+      app.fetch();
+
+      // Displaying Messages in Rooms
+      $('#roomSelect').change(function(){
+        $('.messageContainer').empty();
+        for(var i = 0; i < app.recievedData.length; i++){
+          if(app.recievedData[i].roomname !== undefined ){
+            if($('#roomSelect').val() === app.recievedData[i].roomname) {   
+              addMessages(app.recievedData[i]);
+            }
+          }
+        }
+      });
+      $('#messageSubmit').on('submit', function(e){
+        e.preventDefault();
+        var text = $('#message').val();
+        var finalMessage = createMessage(text);
+        //$('.messageContainer').empty();
+        app.send(finalMessage);
+        app.fetch();
+      });
+    
     },
     send: function(message){
+
       $.ajax({
         // This is the url you should use to communicate with the parse API server.
         url: 'https://api.parse.com/1/classes/chatterbox',
@@ -56,93 +60,78 @@ $(document).ready(function() {
         $.ajax({
           url: 'https://api.parse.com/1/classes/chatterbox',
           type: 'GET',
-          //data: JSON.stringify(message),
+          data: {order: '-createdAt'},
           contentType: 'application/json',
-
           success:  function(data) {
             dataHandler(data);
+            app.recievedData = data.results;
+            // app.recievedData = (data.results).slice(0, 99);
+            // (app.recievedData).push(data.results);
             console.log('chatterbox: Message recieved. Data: ', data);
-            },
+          },
 
           error: function (data) {
             console.error('chatterbox: Failed to recieve message. Error: ', data);
-          }  
-
-           
+          }    
         });
-
-
       }
-
-       
-
   };
 
   var addRoom = function(rooms){
+    
+    // Append new roons to dropdown only
     for(var key in rooms){
       $('#roomSelect').append('<option value= "' + key + '">' + key + '</option>');
     }
   };
 
-  var roomHandler = function(){
-    // $('#roomSelect').change(function(){
-    //   if($('#roomSelect').val() === data.results[i].roomname) {   
-    //       // empty container
-    //     $('.messageContainer').empty();
-    //     // append messages with roomname
-    //     addMessages(data.results[i])
-    //   }
-      
-    // })
-  }
-
   var dataHandler = function (data){ 
+    //$('#roomSelect').html('<option value= "newRoom"> New Room...</option> <option value="lobby" selected> lobby</option>');
+    // var rooms = {};
     for(var i = 0; i < data.results.length; i++){
         addMessages(data.results[i]);
     
       // Check for rooms
-      if(!rooms[data.results[i].roomname]){
+      // User can add room 
+      
+      console.log(data.results[i].roomname);
+      if(!rooms[data.results[i].roomname] ){
         //console.log(data.results[i].roomname)
         rooms[data.results[i].roomname] = data.results[i].roomname;
-      }
-      
-      // Check for friends
-      if(!friends[data.results[i].username]){
-        friends[data.results[i].username] = data.results[i].username;
+
       }
     }
-
-      $('#roomSelect').change(function(){
-        console.log($('#roomSelect').val());
-        $('.messageContainer').empty();
-        for(var i = 0; i < data.results.length; i++){
-
-          if(data.results[i].roomname !== undefined ){
-            if($('#roomSelect').val() === data.results[i].roomname) {   
-              // if(data.results[i] !== undefined && )
-              // empty container
-              
-              // append messages with roomname
-              addMessages(data.results[i]);
-            }
-          }
-        }
-    });
-    
-
+      
+    //   // Check for friends
+    //   if(!friends[data.results[i].username]){
+    //     friends[data.results[i].username] = data.results[i].username;
+    //   }
+    // }
+    console.log(rooms);
     addRoom(rooms);
+    
   };
 
   var addMessages = function(message){
     user = message.username;
     text = message.text;  
-    $('.messageContainer').append('<div class="message">' + user + ':\n' + text + '\n' + '</div>');
+    var newDiv = $('<div class="message"></div>');
+    var fullMessage = user + ':\n' + text;
+    newDiv.text(fullMessage);
+    $('.messageContainer').append(newDiv);
   };
 
+  var createMessage = function(text){
+    var message = {};
+    message.username = app.username;
+    message.text = text;
+    message.roomname = $('#roomSelect').val();
+    return message;
+  };
+ 
+  //createMessage();
   app.init(); 
-  
   //event handler
-
     //clear container
     //append with messages that only have that room
   
